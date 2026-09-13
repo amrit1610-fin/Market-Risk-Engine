@@ -21,10 +21,10 @@ class MarketDataLoader:
         try:
             raw_data = yf.download(self.tickers, start=self.start_date, end=self.end_date)
             
-            if 'Adj Close' in raw_data:
-                adj_close = raw_data['Adj Close']
+            if 'Close' in raw_data:
+                adj_close = raw_data['Close']
             else:
-                raise ValueError("Could not find 'Adj Close' column in downloaded data.")
+                raise ValueError("Could not find 'Close' column in downloaded data.")
             
             # If only one ticker is provided, yfinance returns a Series. Convert to DataFrame.
             if isinstance(adj_close, pd.Series):

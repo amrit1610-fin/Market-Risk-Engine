@@ -21,7 +21,6 @@ class Backtester:
         logger.info("Running backtests (Kupiec, Christoffersen, Traffic Light)...")
         
         # 1. Identify Breaches (Exceptions)
-        # Boolean array where True means actual loss exceeded predicted VaR
         breaches = actual_losses > var_predictions
         
         N = len(breaches)
@@ -31,7 +30,6 @@ class Backtester:
         logger.info(f"Analyzed {N} days. Found {x} breaches (Expected: {N * self.expected_failure_rate:.2f}).")
         
         # 2. Basel Traffic Light System (Standardized for a 250-day window at 99% VaR)
-        # Note: If N != 250, these thresholds theoretically need scaling, but Basel uses 250 hardcoded.
         if x <= 4:
             traffic_light = "Green"
         elif 5 <= x <= 9:
@@ -45,16 +43,13 @@ class Backtester:
         p_hat = actual_failure_rate
         
         if x == 0:
-            # Handle edge case where there are zero breaches
-            lr_kupiec = -2 * np.log(((1 - p)**N))
+            lr_kupiec = -2 * np.log(((1 - p)**N))                              # Handle edge case where there are zero breaches
         else:
-            # Log-Likelihood Ratio
             numerator = ((1 - p)**(N - x)) * (p**x)
             denominator = ((1 - p_hat)**(N - x)) * (p_hat**x)
-            lr_kupiec = -2 * np.log(numerator / denominator)
+            lr_kupiec = -2 * np.log(numerator / denominator)                   # Log-Likelihood Ratio
             
-        # p-value from Chi-square distribution with 1 degree of freedom
-        p_val_kupiec = 1 - chi2.cdf(lr_kupiec, 1)
+        p_val_kupiec = 1 - chi2.cdf(lr_kupiec, 1)                               # p-value from Chi-square distribution with 1 degree of freedom
         
         # 4. Christoffersen Interval Forecast (Independence) Test
         # Null Hypothesis: Breaches are independent (no volatility clustering)

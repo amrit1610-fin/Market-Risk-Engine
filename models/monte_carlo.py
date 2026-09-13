@@ -34,13 +34,12 @@ class MonteCarloVaR(BaseVaRModel):
             cov_matrix = LedoitWolf().fit(returns).covariance_
             L = np.linalg.cholesky(cov_matrix)
             
-        
         Z = np.random.standard_normal((self.num_simulations, num_assets))   # Generating Independent Random Shocks
         correlated_shocks = Z @ L.T                                         # Correlating the Shocks
         simulated_asset_returns = drift + correlated_shocks                 # Simulating 1-Day Log Returns
         simulated_port_returns = simulated_asset_returns @ weights          # Simulated Portfolio Returns
         
-        # Sort and extract VaR / ES (Identical to Historical Simulation)
+        # Sort and extract VaR / ES 
         sorted_returns = np.sort(simulated_port_returns)
         percentile = (1 - self.alpha) * 100
         var_pct = np.percentile(sorted_returns, percentile, method='linear')

@@ -33,7 +33,7 @@ class ParametricVaR(BaseVaRModel):
         port_vol = np.sqrt(port_variance)
         
         # Parametric VaR
-        z_score = norm.ppf(1 - self.alpha)                                      # Find the z-score for the lower tail (e.g., -2.326 for 99%)
+        z_score = norm.ppf(1 - self.alpha)                                      # the z-score for the lower tail
         var_pct = port_mean + (z_score * port_vol)                              # VaR cutoff return
         
         # Calculating Parametric Expected Shortfall (ES)

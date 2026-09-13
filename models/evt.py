@@ -32,7 +32,7 @@ class EVTVaR(BaseVaRModel):
         logger.info(f"Threshold (u) set at {u:.4f}. Found {Nu} tail exceedances.")
         
         # Fitting the GPD to the excess losses
-        shape, loc, scale = genpareto.fit(excess_losses, floc=0)                       # floc=0 forces the location parameter to be 0 since our excesses start exactly at 0
+        shape, loc, scale = genpareto.fit(excess_losses, floc=0)                       # floc=0 forces the location parameter to be 0
         logger.info(f"GPD Fit - Shape (xi): {shape:.4f}, Scale (beta): {scale:.4f}")
         
         p = (1 - self.alpha) / pu

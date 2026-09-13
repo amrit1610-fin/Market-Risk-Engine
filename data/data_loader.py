@@ -21,6 +21,7 @@ class MarketDataLoader:
         try:
             raw_data = yf.download(self.tickers, start=self.start_date, end=self.end_date)
             
+            # Get only closing price for portfolio
             if 'Close' in raw_data:
                 adj_close = raw_data['Close']
             else:
@@ -30,9 +31,9 @@ class MarketDataLoader:
             if isinstance(adj_close, pd.Series):
                 adj_close = adj_close.to_frame(name=self.tickers[0])
                 
-            logger.info("Data fetching successful.")
+            logger.info("**Data fetching successful.**\n")
             return adj_close
             
         except Exception as e:
-            logger.error(f"Failed to fetch market data: {e}")
+            logger.error(f"!! Failed to fetch market data: {e} !!")
             raise

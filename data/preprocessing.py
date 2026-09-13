@@ -12,16 +12,16 @@ class DataPreprocessor:
     def clean_and_calculate_returns(raw_prices: pd.DataFrame) -> pd.DataFrame:
         logger.info("Starting data preprocessing...")
         
-        # fill missing data 
         # forward-fill because we assume the last traded price remains the valid valuation.
-        prices_clean = raw_prices.ffill()
+        clean_prices = raw_prices.ffill()
         
         # Backward-fill any remaining NaNs at the very beginning of the series
-        prices_clean = prices_clean.bfill()
+        clean_prices = clean_prices.bfill()
         
-        # Calculate Log Returns: ln(P_t / P_{t-1})
-        log_returns = np.log(prices_clean / prices_clean.shift(1))
+        # Calculate Log Returns
+        log_returns = np.log(clean_prices / clean_prices.shift(1))
         log_returns = log_returns.dropna(how='all')
+        logger.info("Calculated Log returns...")
         
-        logger.info(f"Preprocessing complete. Final returns matrix shape: {log_returns.shape}")
+        logger.info(f"**Preprocessing complete. Final returns matrix shape: {log_returns.shape}**\n")
         return log_returns

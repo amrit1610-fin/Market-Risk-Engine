@@ -1,0 +1,91 @@
+import numpy as np
+import pandas as pd
+import logging
+
+from data.loader import MarketDataLoader
+from data.preprocessing import DataPreprocessor
+from models.historical import HistoricalVaR
+from models.parametric import ParametricVaR
+from models.monte_carlo import MonteCarloVaR
+from models.evt import EVTVaR
+from backtest.tests import Backtester
+
+# Configure logging for the main run
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logger = logging.getLogger(__name__)
+
+def main():
+    # 1. Define Portfolio and Parameters
+    tickers = ['AAPL', 'MSFT', 'JPM', 'XOM']
+    weights = np.array([0.40, 0.30, 0.20, 0.10])
+    portfolio_value = 1_000_000  # $1M Portfolio
+    
+    # We pull 2 years of data. 
+    # Year 1 (250 days) builds the first window. Year 2 (250 days) is the backtest period.
+    start_date = '2024-01-01'
+    end_date = '2026-01-01'
+    window_size = 250 
+
+    # 2. Ingest and Clean Data
+    loader = MarketDataLoader(tickers, start_date, end_date)
+    raw_prices = loader.fetch_data()
+    
+    preprocessor = DataPreprocessor()
+    returns = preprocessor.clean_and_calculate_returns(raw_prices)
+    
+    # 3. Initialize Models and Backtester
+    models = {
+        "Historical Simulation": HistoricalVaR(portfolio_value=portfolio_value),
+        "Parametric (Ledoit-Wolf)": ParametricVaR(portfolio_value=portfolio_value),
+        # Reduced simulations for speed in daily rolling loop
+        "Monte Carlo (Cholesky)": MonteCarloVaR(portfolio_value=portfolio_value, num_simulations=2000),
+        "Extreme Value Theory (POT)": EVTVaR(portfolio_value=portfolio_value)
+    }
+    
+    backtester = Backtester(confidence_level=0.99)
+    
+    # Storage arrays for our rolling predictions
+    var_predictions = {name: [] for name in models.keys()}
+    actual_losses = []
+    
+    logger.info(f"Starting rolling backtest over {len(returns) - window_size} days...")
+
+    # 4. The Rolling Window Backtest Loop
+    for i in range(window_size, len(returns)):
+        # Isolate the trailing 250-day window
+        window_returns = returns.iloc[i - window_size : i]
+        
+        # What actually happened on day T+1?
+        actual_daily_return = returns.iloc[i].dot(weights)
+        actual_loss = -actual_daily_return * portfolio_value
+        actual_losses.append(actual_loss)
+        
+        # Have each model predict VaR for day T+1 based on the window
+        for name, model in models.items():
+            # Suppress individual model logs in the loop to avoid terminal spam
+            logging.getLogger(model.__module__).setLevel(logging.WARNING)
+            
+            result = model.calculate(window_returns, weights)
+            var_predictions[name].append(result["VaR"])
+            
+    # 5. Evaluate Results
+    print("\n" + "="*50)
+    print("BACKTESTING RESULTS (99% Confidence, 250-Day Window)")
+    print("="*50)
+    
+    actual_losses_arr = np.array(actual_losses)
+    
+    for name in models.keys():
+        print(f"\nEvaluating: {name}")
+        preds = np.array(var_predictions[name])
+        results = backtester.evaluate(actual_losses_arr, preds)
+        
+        print(f"Total Days:      {results['Total_Days']}")
+        print(f"Expected Breaks: {results['Expected_Breaches']}")
+        print(f"Actual Breaks:   {results['Actual_Breaches']}")
+        print(f"Traffic Light:   {results['Traffic_Light']}")
+        print(f"Kupiec p-value:  {results['Kupiec_p_value']:.4f}")
+        print(f"Christoff p-val: {results['Christoffersen_p_value']:.4f}")
+
+if __name__ == "__main__":
+    main()

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import logging
 
-from data.loader import MarketDataLoader
+from data.data_loader import MarketDataLoader
 from data.preprocessing import DataPreprocessor
 from models.historical import HistoricalVaR
 from models.parametric import ParametricVaR

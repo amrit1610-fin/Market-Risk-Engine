@@ -6,6 +6,7 @@ import pandas as pd
 from data.data_loader import MarketDataLoader
 from data.preprocessing import DataPreprocessor
 from models.historical import HistoricalVaR
+from models.garch_historical import GarchHistoricalVaR
 from models.parametric import ParametricVaR
 from models.monte_carlo import MonteCarloVaR
 from models.evt import EVTVaR
@@ -62,6 +63,7 @@ def main():
     # 3. Initialize Models and Backtester
     models = {
         "Historical Simulation": HistoricalVaR(portfolio_value=portfolio_value),
+        "GARCH(1,1) Historical Simulation": GarchHistoricalVaR(portfolio_value=portfolio_value),
         "Parametric (Ledoit-Wolf)": ParametricVaR(portfolio_value=portfolio_value),
         "Monte Carlo (Cholesky)": MonteCarloVaR(portfolio_value=portfolio_value, num_simulations=2000),      # Reduced simulations for speed in daily rolling loop
         "Extreme Value Theory (POT)": EVTVaR(portfolio_value=portfolio_value)
@@ -95,23 +97,34 @@ def main():
             var_predictions[name].append(result["VaR"])
             
     # 5. Evaluate Results
-    print("\n" + "="*50)
-    print("BACKTESTING RESULTS (99% Confidence, 250-Day Window)")
-    print("="*50)
-    
     actual_losses_arr = np.array(actual_losses)
+    expected_breaks = round(len(actual_losses_arr) * backtester.expected_failure_rate, 2)
+    
+    print("\n" + "="*85)
+    print(f" MARKET RISK BACKTESTING REPORT | Window: {window_size} Days | Confidence: {backtester.alpha * 100}%")
+    print(f" Total Days Analyzed: {len(actual_losses_arr)} | Expected Breaches: {expected_breaks}")
+    print("="*85)
+    
+    summary_data = []
     
     for name in models.keys():
-        print(f"\nEvaluating: {name}")
         preds = np.array(var_predictions[name])
+        
+        # Temporarily mute the backtester logger to keep the console clean
+        logging.getLogger(backtester.__module__).setLevel(logging.WARNING)
         results = backtester.evaluate(actual_losses_arr, preds)
         
-        print(f"Total Days:      {results['Total_Days']}")
-        print(f"Expected Breaks: {results['Expected_Breaches']}")
-        print(f"Actual Breaks:   {results['Actual_Breaches']}")
-        print(f"Traffic Light:   {results['Traffic_Light']}")
-        print(f"Kupiec p-value:  {results['Kupiec_p_value']:.4f}")
-        print(f"Christoff p-val: {results['Christoffersen_p_value']:.4f}")
+        summary_data.append({
+            "Model": name,
+            "Breaches": results['Actual_Breaches'],
+            "Traffic Light": results['Traffic_Light'],
+            "Kupiec (p-val)": f"{results['Kupiec_p_value']:.4f}",
+            "Christoff (p-val)": f"{results['Christoffersen_p_value']:.4f}"
+        })
+        
+    report_df = pd.DataFrame(summary_data).set_index("Model")
+    print(report_df.to_string())
+    print("="*85 + "\n")
 
     print(f"\n!!SUCCESS: VAR/ES engine for Market Risk executed !!")
 

@@ -5,11 +5,10 @@ import pandas as pd
 
 from data.data_loader import MarketDataLoader
 from data.preprocessing import DataPreprocessor
-from models.historical import HistoricalVaR
-from models.garch_historical import GarchHistoricalVaR
+from models.historical import BaseHistoricalVaR, GarchHistoricalVaR
 from models.parametric import ParametricVaR
 from models.monte_carlo import MonteCarloVaR
-from models.evt import EVTVaR
+from models.evt import BaseEVTVaR, GarchEVTVaR
 from backtest.tests import Backtester
 
 def setup_logging(debug_mode: bool):
@@ -62,11 +61,12 @@ def main():
     
     # 3. Initialize Models and Backtester
     models = {
-        "Historical Simulation": HistoricalVaR(portfolio_value=portfolio_value),
+        "Historical Simulation": BaseHistoricalVaR(portfolio_value=portfolio_value),
         "GARCH(1,1) Historical Simulation": GarchHistoricalVaR(portfolio_value=portfolio_value),
         "Parametric (Ledoit-Wolf)": ParametricVaR(portfolio_value=portfolio_value),
         "Monte Carlo (Cholesky)": MonteCarloVaR(portfolio_value=portfolio_value, num_simulations=2000),      # Reduced simulations for speed in daily rolling loop
-        "Extreme Value Theory (POT)": EVTVaR(portfolio_value=portfolio_value)
+        "Extreme Value Theory (POT)": BaseEVTVaR(portfolio_value=portfolio_value),
+        "Conditional EVT ": GarchEVTVaR(portfolio_value=portfolio_value)
     }
     
     backtester = Backtester(confidence_level=0.99)

@@ -131,6 +131,35 @@ def main():
     print(report_df.to_string())
     print("="*85 + "\n")
 
+    # 7. Stressed VaR (SVaR) - 2008 Lehman Crisis
+    print("* Loading 2008 Lehman Crisis data for Stressed VaR (SVaR)...")
+    
+    # Fetch exact 2008 data
+    loader_2008 = MarketDataLoader(tickers, start_date='2008-01-01', end_date='2008-12-31')
+    raw_prices_2008 = loader_2008.fetch_data()
+    crisis_returns = preprocessor.clean_and_calculate_returns(raw_prices_2008)
+
+    print("\n" + "="*85)
+    print(f" STRESSED VaR (SVaR) | 2008 Lehman Crisis | Confidence: 99.0%")
+    print("="*85)
+
+    svar_data = []
+    for name, model in models.items():
+        # Mute logs for clean terminal output
+        logging.getLogger(model.__module__).setLevel(logging.WARNING)
+        
+        # Calculate risk using 2008 data, but CURRENT portfolio weights
+        res = model.calculate(crisis_returns, weights)
+        svar_data.append({
+            "Model": name,
+            "SVaR (99%)": f"${res['VaR']:,.2f}",
+            "Stressed ES": f"${res['ES']:,.2f}"
+        })
+
+    svar_df = pd.DataFrame(svar_data).set_index("Model")
+    print(svar_df.to_string())
+    print("="*85 + "\n")
+
     print(f"!!SUCCESS: VAR/ES engine for Market Risk executed !!\n")
 
 if __name__ == "__main__":

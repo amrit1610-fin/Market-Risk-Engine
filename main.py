@@ -84,24 +84,54 @@ def main():
             result = model.calculate(window_returns, weights)
             var_predictions[name].append(result["VaR"])
             
-    # 5. Calculate T+1 Risk Forecast (Tomorrow's Risk Limits)
+    # 5. Calculate T+1 Risk Forecast (By Desk and Total Book)
     print("\n" + "="*85)
-    print(f" T+1 RISK FORECAST | Portfolio Value: ${portfolio_value:,.2f} | Confidence: 99.0%")
+    print(f" T+1 DAILY VaR/ES REPORT | Confidence: 99.0%")
     print("="*85)
     
     current_window = returns.iloc[-window_size:]
+    
+    # Define Desk Allocations (Indices map to: AAPL=0, MSFT=1, JPM=2, XOM=3)
+    desks = {
+        "Tech Desk": {"cols": [0, 1], "value": 700_000},
+        "Macro Desk": {"cols": [2, 3], "value": 300_000},
+        "Total Book": {"cols": [0, 1, 2, 3], "value": 1_000_000}
+    }
+    
     forecast_data = []
     
-    for name, model in models.items():
-        res = model.calculate(current_window, weights)
+    for desk_name, desk_info in desks.items():
+        # Isolate the data and weights for this specific desk
+        desk_cols = desk_info["cols"]
+        desk_value = desk_info["value"]
+        
+        desk_returns = current_window.iloc[:, desk_cols]
+        
+        # Extract original weights and re-normalize them so they sum to 1.0 for the desk
+        raw_weights = weights[desk_cols]
+        desk_weights = raw_weights / raw_weights.sum() 
+        
+        # We'll use the Conditional EVT (GARCH) model as the official desk reporting metric
+        model = models["Conditional EVT (GARCH)"]
+        
+        # Temporarily update the model's portfolio value for this calculation
+        model.portfolio_value = desk_value
+        logging.getLogger(model.__module__).setLevel(logging.WARNING)
+        
+        res = model.calculate(desk_returns, desk_weights)
+        
         forecast_data.append({
-            "Model": name,
+            "Portfolio": desk_name,
+            "Allocation": f"${desk_value:,.0f}",
             "VaR (99%)": f"${res['VaR']:,.2f}",
             "Expected Shortfall": f"${res['ES']:,.2f}"
         })
         
-    forecast_df = pd.DataFrame(forecast_data).set_index("Model")
-    print(forecast_df.to_string())
+    # Reset the model's portfolio value back to 1M for the SVaR calculations later
+    models["Conditional EVT (GARCH)"].portfolio_value = portfolio_value 
+
+    desk_df = pd.DataFrame(forecast_data).set_index("Portfolio")
+    print(desk_df.to_string())
 
     # 6. Evaluate Backtest Results
     actual_losses_arr = np.array(actual_losses)

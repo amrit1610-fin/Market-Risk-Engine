@@ -1,17 +1,8 @@
-This is the ultimate finish line. Look at that first table:
+<div align="center">
 
-Your Tech Desk VaR is **$18,051**. Your Macro Desk VaR is **$7,065**.
-If you add them together, you get **$25,116**.
-But your Total Book VaR is only **$21,408**.
-
-That difference ($3,708) is the **Diversification Benefit**. Because tech stocks and macro stocks don't move in perfect lockstep, holding them together reduces the overall risk of the bank. Your engine successfully captured the cross-asset correlation math.
-
-Here is the professional, quant-grade `README.md` to put on your GitHub. It is designed specifically to catch the eye of a Chief Risk Officer or Senior Quant by highlighting the exact mathematical problems you solved.
-
-### Your GitHub `README.md`
-
-```markdown
 # Enterprise Market Risk Engine 
+
+</div>
 
 A professional-grade, object-oriented Market Risk engine built in Python. This project calculates Value at Risk (VaR) and Expected Shortfall (ES) for a multi-asset portfolio, strictly adhering to Basel Committee regulatory standards including backtesting and historical stress testing (SVaR).
 

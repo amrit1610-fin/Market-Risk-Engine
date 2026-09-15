@@ -1,10 +1,10 @@
 <div align="center">
 
-# Enterprise Market Risk Engine 
+# Portfolio Market Risk Engine 
 
 </div>
 
-A professional-grade, object-oriented Market Risk engine built in Python. This project calculates Value at Risk (VaR) and Expected Shortfall (ES) for a multi-asset portfolio, strictly adhering to Basel Committee regulatory standards including backtesting and historical stress testing (SVaR).
+An object-oriented Market Risk engine built in Python for analyzing portfolio of assets. This project calculates Value at Risk (VaR) and Expected Shortfall (ES) for a multi-asset portfolio, strictly adhering to Basel Committee regulatory standards including backtesting and historical stress testing (SVaR).
 
 ## 📊 Core Capabilities
 
